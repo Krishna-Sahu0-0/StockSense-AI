@@ -48,6 +48,18 @@ export const sendSignUpEmail = inngest.createFunction(
     }
 )
 
+const cleanGeneratedHtml = (html: string): string => {
+    return html
+        .replace(
+            /href=["']\[(https?:\/\/[^"'\]]+)\]\((https?:\/\/[^"')]+)\)["']/gi,
+            'href="$2"'
+        )
+        .replace(
+            /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/gi,
+            '<a href="$2">$1</a>'
+        );
+};
+
 export const sendDailyNewsSummary = inngest.createFunction(
     { id: 'daily-news-summary' },
     [ { event: 'app/send.daily.news' }, { cron: '0 12 * * *' } ],
@@ -95,8 +107,11 @@ export const sendDailyNewsSummary = inngest.createFunction(
                     });
 
                     const part = response.candidates?.[0]?.content?.parts?.[0];
-                    const newsContent = (part && 'text' in part ? part.text : null) || 'No market news.'
+                    
+                    const rawNewsContent =
+                        (part && 'text' in part ? part.text : null) || 'No market news.';
 
+                    const newsContent = cleanGeneratedHtml(rawNewsContent);
                     userNewsSummaries.push({ user, newsContent });
                 } catch (e) {
                     console.error('Failed to summarize news for : ', user.email);
@@ -105,16 +120,41 @@ export const sendDailyNewsSummary = inngest.createFunction(
             }
 
         // Step #4: (placeholder) Send the emails
-        await step.run('send-news-emails', async () => {
-                await Promise.all(
-                    userNewsSummaries.map(async ({ user, newsContent}) => {
-                        if(!newsContent) return false;
+        const emailResult = await step.run('send-news-emails', async () => {
+            const results = await Promise.all(
+                userNewsSummaries.map(async ({ user, newsContent }) => {
+                    if (!newsContent) return false;
 
-                        return await sendNewsSummaryEmail({ email: user.email, date: getFormattedTodayDate(), newsContent })
-                    })
-                )
-            })
+                    try {
+                        await sendNewsSummaryEmail({
+                            email: user.email,
+                            date: getFormattedTodayDate(),
+                            newsContent
+                        });
 
-        return { success: true, message: 'Daily news summary emails sent successfully' }
+                        return true;
+                    } catch (error) {
+                        console.error(
+                            'Failed to send news email to:',
+                            user.email,
+                            error
+                        );
+
+                        return false;
+                    }
+                })
+            );
+
+            return {
+                emailsSent: results.filter(Boolean).length,
+                emailsFailed: results.filter(result => !result).length
+            };
+        });
+
+        return {
+            success: true,
+            message: 'Daily news summary emails sent successfully',
+            ...emailResult
+        };
     }
 )

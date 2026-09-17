@@ -196,7 +196,19 @@ Apple Stock Jumped After Great Earnings Report
 <div style="margin: 20px 0 0 0;">
 <a href="https://example.com/article2" style="color: #FDD458; text-decoration: none; font-weight: 500; font-size: 14px;" target="_blank" rel="noopener noreferrer">Read Full Story →</a>
 </div>
-</div>`
+</div>
+
+IMPORTANT HTML RULES:
+- Generate only valid HTML.
+- Do NOT use Markdown syntax anywhere.
+- Never use [text](url) Markdown links.
+- For article links, always use standard HTML anchor tags.
+- The href attribute must contain only the raw URL.
+- Correct format:
+  <a href="https://example.com">Read Full Story →</a>
+- Incorrect format:
+  <a href="[https://example.com](https://example.com)">Read Full Story →</a>
+- Do not wrap URLs in square brackets or parentheses.`
 
 export const TRADINGVIEW_SYMBOL_MAPPING_PROMPT = `You are an expert in financial markets and trading platforms. Your task is to find the correct TradingView symbol that corresponds to a given Finnhub stock symbol.
 
