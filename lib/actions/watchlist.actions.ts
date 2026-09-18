@@ -50,7 +50,7 @@ export async function getWatchlistByEmail(email: string): Promise<StockWithData[
     const symbols = Array.from(
       new Set(
         docs
-          .map((doc: any) => String(doc.symbol || '').trim().toUpperCase())
+          .map((doc) => String(doc.symbol || '').trim().toUpperCase())
           .filter((s) => s.length > 0),
       ),
     );
@@ -114,7 +114,7 @@ export async function getWatchlistByEmail(email: string): Promise<StockWithData[
     }
 
     // Shape documents into StockWithData with live price fields when available
-    const watchlist: StockWithData[] = docs.map((doc: any) => {
+    const watchlist: StockWithData[] = docs.map((doc) => {
       const symbol = String(doc.symbol).toUpperCase();
       const quote = quotesBySymbol[symbol];
       const fin = financialsBySymbol[symbol];
