@@ -47,6 +47,15 @@ export async function getWatchlistByEmail(email: string): Promise<StockWithData[
 
     const docs = await Watchlist.find({ userId }).lean();
 
+    const uniqueDocs = Array.from(
+      new Map(
+        docs.map((doc) => [
+          String(doc.symbol || '').trim().toUpperCase(),
+          doc,
+        ])
+      ).values()
+    );
+
     const symbols = Array.from(
       new Set(
         docs
@@ -114,7 +123,7 @@ export async function getWatchlistByEmail(email: string): Promise<StockWithData[
     }
 
     // Shape documents into StockWithData with live price fields when available
-    const watchlist: StockWithData[] = docs.map((doc) => {
+    const watchlist: StockWithData[] = uniqueDocs.map((doc) => {
       const symbol = String(doc.symbol).toUpperCase();
       const quote = quotesBySymbol[symbol];
       const fin = financialsBySymbol[symbol];
@@ -185,7 +194,7 @@ export async function toggleWatchlist(symbol: string, company: string): Promise<
     const existing = await Watchlist.findOne({ userId, symbol: normalizedSymbol });
 
     if (existing) {
-      await Watchlist.deleteOne({ _id: existing._id });
+      await Watchlist.deleteMany({ userId, symbol: normalizedSymbol });
       return { added: false };
     }
 
@@ -201,4 +210,3 @@ export async function toggleWatchlist(symbol: string, company: string): Promise<
     throw err;
   }
 }
-

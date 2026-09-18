@@ -15,7 +15,19 @@ export default function SearchCommand({ renderAs = 'button', label = 'Add stock'
   const [stocks, setStocks] = useState<StockWithWatchlistStatus[]>(initialStocks);
 
   const isSearchMode = !!searchTerm.trim();
-  const displayStocks = isSearchMode ? stocks : stocks?.slice(0, 10);
+
+  const uniqueStocks = Array.from(
+    new Map(
+      stocks.map((stock) => [
+        stock.symbol.toUpperCase(),
+        stock,
+      ])
+    ).values()
+  );
+
+  const displayStocks = isSearchMode
+    ? uniqueStocks
+    : uniqueStocks.slice(0, 10);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -29,12 +41,33 @@ export default function SearchCommand({ renderAs = 'button', label = 'Add stock'
   }, [])
 
   const handleSearch = async () => {
-    if(!isSearchMode) return setStocks(initialStocks);
+    if (!isSearchMode) {
+      const uniqueInitialStocks = Array.from(
+        new Map(
+          initialStocks.map((stock) => [
+            stock.symbol.toUpperCase(),
+            stock,
+          ])
+        ).values()
+      );
+
+      return setStocks(uniqueInitialStocks);
+    }
 
     setLoading(true)
     try {
         const results = await searchStocks(searchTerm.trim());
-        setStocks(results);
+
+        const uniqueResults = Array.from(
+          new Map(
+            results.map((stock) => [
+              stock.symbol.toUpperCase(),
+              stock,
+            ])
+          ).values()
+        );
+
+        setStocks(uniqueResults);
     } catch {
       setStocks([])
     } finally {
@@ -49,10 +82,20 @@ export default function SearchCommand({ renderAs = 'button', label = 'Add stock'
   }, [searchTerm]);
 
   const handleSelectStock = () => {
-    setOpen(false);
-    setSearchTerm("");
-    setStocks(initialStocks);
-  }
+      setOpen(false);
+      setSearchTerm("");
+
+      const uniqueInitialStocks = Array.from(
+        new Map(
+          initialStocks.map((stock) => [
+            stock.symbol.toUpperCase(),
+            stock,
+          ])
+        ).values()
+      );
+
+      setStocks(uniqueInitialStocks);
+    }
 
   return (
     <>
